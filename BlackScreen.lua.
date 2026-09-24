@@ -1,0 +1,124 @@
+--[[
+	Black Screen System
+	LocalScript — coloque em:
+	StarterPlayer > StarterPlayerScripts
+]]
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- =========================
+-- CONFIGURAÇÕES (edite aqui)
+-- =========================
+local GUI_NAME = "BlackScreenSystem"
+local FADE_TIME = 0.35
+local EASING_STYLE = Enum.EasingStyle.Quad
+local EASING_DIRECTION = Enum.EasingDirection.Out
+
+local BUTTON_SIZE = UDim2.fromOffset(200, 48)
+local BUTTON_PADDING = 14
+
+-- =========================
+-- Evita interfaces duplicadas
+-- =========================
+local existing = playerGui:FindFirstChild(GUI_NAME)
+if existing then
+	existing:Destroy()
+end
+
+-- =========================
+-- ScreenGui
+-- =========================
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = GUI_NAME
+screenGui.ResetOnSpawn = false
+screenGui.IgnoreGuiInset = true
+screenGui.DisplayOrder = 1000
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+screenGui.Enabled = true
+screenGui.Parent = playerGui
+
+-- =========================
+-- Overlay preto (tela cheia)
+-- =========================
+local blackFrame = Instance.new("Frame")
+blackFrame.Name = "BlackOverlay"
+blackFrame.AnchorPoint = Vector2.new(0, 0)
+blackFrame.Position = UDim2.fromScale(0, 0)
+blackFrame.Size = UDim2.fromScale(1, 1)
+blackFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+blackFrame.BackgroundTransparency = 1
+blackFrame.BorderSizePixel = 0
+blackFrame.ZIndex = 1
+blackFrame.Active = false -- não bloqueia cliques / movimento
+blackFrame.Selectable = false
+blackFrame.Parent = screenGui
+
+-- =========================
+-- Botão de controle
+-- =========================
+local toggleButton = Instance.new("TextButton")
+toggleButton.Name = "ToggleButton"
+toggleButton.AnchorPoint = Vector2.new(1, 0)
+toggleButton.Position = UDim2.new(1, -BUTTON_PADDING, 0, BUTTON_PADDING)
+toggleButton.Size = BUTTON_SIZE
+toggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+toggleButton.BackgroundTransparency = 0.15
+toggleButton.BorderSizePixel = 0
+toggleButton.Text = "Black Screen: OFF"
+toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.Font = Enum.Font.GothamBold
+toggleButton.TextScaled = true
+toggleButton.AutoButtonColor = true
+toggleButton.Active = true
+toggleButton.AutoLocalize = false
+toggleButton.ZIndex = 10
+toggleButton.Parent = screenGui
+
+local textPadding = Instance.new("UIPadding")
+textPadding.PaddingLeft = UDim.new(0, 8)
+textPadding.PaddingRight = UDim.new(0, 8)
+textPadding.PaddingTop = UDim.new(0, 6)
+textPadding.PaddingBottom = UDim.new(0, 6)
+textPadding.Parent = toggleButton
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 10)
+corner.Parent = toggleButton
+
+local stroke = Instance.new("UIStroke")
+stroke.Thickness = 1.5
+stroke.Color = Color3.fromRGB(220, 220, 220)
+stroke.Transparency = 0.25
+stroke.Parent = toggleButton
+
+-- =========================
+-- Lógica do fade
+-- =========================
+local isOn = false
+local tweenInfo = TweenInfo.new(FADE_TIME, EASING_STYLE, EASING_DIRECTION)
+local currentTween = nil
+
+local function setBlackScreen(enabled)
+	isOn = enabled
+
+	if currentTween then
+		currentTween:Cancel()
+		currentTween = nil
+	end
+
+	local targetTransparency = enabled and 0 or 1
+	currentTween = TweenService:Create(blackFrame, tweenInfo, {
+		BackgroundTransparency = targetTransparency,
+	})
+	currentTween:Play()
+
+	toggleButton.Text = enabled and "Black Screen: ON" or "Black Screen: OFF"
+end
+
+toggleButton.Activated:Connect(function()
+	setBlackScreen(not isOn)
+end)
